@@ -9,6 +9,12 @@ namespace ProxyClasses
 {
     public class StreamReader
     {
+
+        byte[] placeholderBytes;
+        public StreamReader()
+        {
+            placeholderBytes = File.ReadAllBytes(@"Assets\Placeholder.png");
+        }
         public static string getBetween(string strSource, string strStart, string strEnd)
         {
             int Start, End;
@@ -67,6 +73,7 @@ namespace ProxyClasses
         }
         public async Task WriteMessageWithBufferAsync(NetworkStream destinationStream, byte[] messageBytes, int buffer)
         {
+            if (messageBytes == null) return;
             int index = 0;
             while (index < messageBytes.Length)
             {
@@ -89,7 +96,7 @@ namespace ProxyClasses
                 if (headers.Contains("Content-Type: image"))
                 {
                     //use memory to read the body. replace the image if settings say so
-                    byte[] placeholderBytes = File.ReadAllBytes(@"Assets\Placeholder.png");
+                    //byte[] placeholderBytes = File.ReadAllBytes(@"Assets\Placeholder.png");
                     await memory.WriteAsync(placeholderBytes, 0, placeholderBytes.Length);
                 }
                 memory.Dispose();
