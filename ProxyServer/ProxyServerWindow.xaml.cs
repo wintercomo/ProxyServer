@@ -82,32 +82,14 @@ namespace ProxyServer
                     tcpClient = await tcpListner.AcceptTcpClientAsync();
                     NetworkStream clientStream = tcpClient.GetStream();
                     await ListenForHttpRequest(tcpClient);
-                    //Task _1= Task.Run(async () => await ListenForHttpRequest(tcpClient));
                     if(clientRequest != null) await HandleHttpRequest(clientStream);
-                    //Task _2= Task.Run(async () => await HandleHttpRequest(tcpClient));
-                    //this method slows the UI
-                    //responseData = await streamReader.MakeProxyRequestAsync(clientRequest, settings.BufferSize);
-                    //string responseString = ASCIIEncoding.ASCII.GetString(responseData, 0, responseData.Length);
-                    //proxyResponse = new HttpRequest(HttpRequest.RESPONSE, settings) { LogItemInfo = responseString };
-                    //UpdateUIWithLogItem(proxyResponse);
-                    //await HandleProxyRequest(clientStream);
-                    //if (proxyResponse.Method.Contains("304 Not Modified"))
-                    //{
-                    //    responseData = cachedResponse.ResponseBytes;
-                    //    proxyResponse = new HttpRequest(HttpRequest.CACHED_RESPONSE, settings) { LogItemInfo = responseString };
-                    //}
-                    //if (settings.ContentFilterOn) responseData = await streamReader.ReplaceImages(responseData);
                     Task _3 = Task.Run(async () => await HandleProxyRequest(clientStream));
-                    //await streamReader.WriteMessageWithBufferAsync(clientStream, responseData, settings.BufferSize);
-                    //await streamReader.WriteMessageWithBufferAsync(clientStream, responseData, settings.BufferSize);
-
                     if (settings.LogContentIn && clientRequest != null) UpdateUIWithLogItem(clientRequest);
                     if (settings.LogContentOut)
                     {
                         if(proxyResponse != null) UpdateUIWithLogItem(proxyResponse);
                         if(cachedResponseObject != null) UpdateUIWithLogItem(cachedResponseObject);
                     }
-                    //OnEndRequest(clientStream);
                 }
             }
 
@@ -161,8 +143,8 @@ namespace ProxyServer
             if (cacher.RequestKnown(clientRequest.Method))
             {
                 cachedResponse = cacher.GetKnownResponse(clientRequest.Method);
-                bool contentModified = cacher.OlderThanTimeout(cachedResponse, settings.CacheTimeout);
-                if (contentModified)
+                bool olderThanTimeout = cacher.OlderThanTimeout(cachedResponse, settings.CacheTimeout);
+                if (olderThanTimeout)
                 {
                     cacher.RemoveItem(clientRequest.Method);
                     //await HandleProxyRequest(clientStream);
@@ -173,7 +155,7 @@ namespace ProxyServer
                 string knownResponse = Encoding.ASCII.GetString(knownResponseBytes, 0, knownResponseBytes.Length);
                 cachedResponseObject = new HttpRequest(HttpRequest.CACHED_RESPONSE, settings) { LogItemInfo = knownResponse };
                 string modifiedDate = cachedResponseObject.GetHeader("Last-Modified");
-                if (modifiedDate != "") clientRequest.UpdateHeader("If-Modified-Since", $" {modifiedDate}");
+                if (modifiedDate != "" && settings.CheckModifiedContent) clientRequest.UpdateHeader("If-Modified-Since", $" {modifiedDate}");
             }
             //await HandleProxyRequest(clientStream);
         }
