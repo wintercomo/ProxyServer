@@ -130,7 +130,7 @@ namespace ProxyServer
             byte[] requestBytes = await streamReader.GetBytesFromReading(settings.BufferSize, clientStream);
             string requestInfo = ASCIIEncoding.ASCII.GetString(requestBytes,0,requestBytes.Length);
             // firefox spam requests
-            if (!requestInfo.Contains("detectportal"))
+            if (!requestInfo.Contains("detectportal") || !requestInfo.Contains("pusher"))
             {
                 clientRequest = new HttpRequest(HttpRequest.REQUEST, settings) { LogItemInfo = requestInfo };
                 //if (settings.LogContentIn && clientRequest != null) UpdateUIWithLogItem(clientRequest);
@@ -154,6 +154,7 @@ namespace ProxyServer
                 if (settings.ContentFilterOn) knownResponseBytes = await streamReader.ReplaceImages(knownResponseBytes);
                 string knownResponse = Encoding.ASCII.GetString(knownResponseBytes, 0, knownResponseBytes.Length);
                 cachedResponseObject = new HttpRequest(HttpRequest.CACHED_RESPONSE, settings) { LogItemInfo = knownResponse };
+                UpdateUIWithLogItem(cachedResponseObject);
                 string modifiedDate = cachedResponseObject.GetHeader("Last-Modified");
                 if (modifiedDate != "" && settings.CheckModifiedContent) clientRequest.UpdateHeader("If-Modified-Since", $" {modifiedDate}");
             }
@@ -168,7 +169,7 @@ namespace ProxyServer
             {
                 responseData = cachedResponse.ResponseBytes;
                 //proxyResponse = new HttpRequest(HttpRequest.CACHED_RESPONSE, settings) { LogItemInfo = responseString };
-                await streamReader.WriteMessageWithBufferAsync(clientStream, responseData, settings.BufferSize);
+                //await streamReader.WriteMessageWithBufferAsync(clientStream, responseData, settings.BufferSize);
             }
             if (settings.ContentFilterOn) responseData = await streamReader.ReplaceImages(responseData);
             // find a way to be able to do this
