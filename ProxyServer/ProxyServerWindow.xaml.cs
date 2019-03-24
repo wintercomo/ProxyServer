@@ -87,7 +87,7 @@ namespace ProxyServer
                     if (settings.LogContentIn && clientRequest != null) UpdateUIWithLogItem(clientRequest);
                     if (settings.LogContentOut)
                     {
-                        if(proxyResponse != null) UpdateUIWithLogItem(proxyResponse);
+                        //if(proxyResponse != null) UpdateUIWithLogItem(proxyResponse);
                         if(cachedResponseObject != null) UpdateUIWithLogItem(cachedResponseObject);
                     }
                 }
