@@ -56,10 +56,12 @@ namespace ProxyClasses
                 NetworkStream proxyStream = proxyTcpClient.GetStream();
                 byte[] requestInBytes = Encoding.ASCII.GetBytes(httpRequestString);
                 await WriteMessageWithBufferAsync(proxyStream, requestInBytes, bufferSize);
-                byte[] responseBytes = await GetBytesFromReading(bufferSize, proxyStream);
+                MemoryStream ms = new MemoryStream();
+                await proxyStream.CopyToAsync(ms);
+                //byte[] responseBytes = await GetBytesFromReading(bufferSize, proxyStream);
                 proxyTcpClient.Dispose();
                 proxyStream.Dispose();
-                return responseBytes;
+                return ms.ToArray();
             }
             catch (ArgumentException err)
             {

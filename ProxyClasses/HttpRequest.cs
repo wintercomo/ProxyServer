@@ -14,7 +14,7 @@ namespace ProxyClasses
         public const string MESSAGE = "MESSAGE";
         public const string ERROR = "ERROR";
         public const string CACHED_RESPONSE = "CACHED RESPONSE";
-        private string logItemInfo;
+        public string logItemInfo;
         private string type; // { PROXY, REQUEST, RESPONSE, MESSAGE };
         private string method;
         private string body;

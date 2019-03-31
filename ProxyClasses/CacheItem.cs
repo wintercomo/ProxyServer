@@ -9,7 +9,7 @@ namespace ProxyClasses
         private byte[] responseBytes;
         DateTime timeSaved;
         public DateTime TimeSaved { get => timeSaved; set => timeSaved = value; }
-        public byte[] ResponseBytes { get => responseBytes; set => responseBytes = value; }
+        public byte[] ResponseBytes { get => responseBytes; protected set => responseBytes = value; }
 
         public CacheItem(byte[] requestBytes)
         {
