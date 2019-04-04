@@ -12,12 +12,12 @@ namespace ProxyClasses
 
     {
         TcpListener serverListener;
-        int bufferSize;
+        ProxySettingsViewModel settings;
 
         public ProxyServer(ProxySettingsViewModel proxySettings)
         {
             serverListener = new TcpListener(IPAddress.Any, proxySettings.Port);
-            this.bufferSize = proxySettings.BufferSize;
+            this.settings = proxySettings;
         }
 
         public void StartServer()
@@ -33,8 +33,8 @@ namespace ProxyClasses
         public async Task AcceptTcpClientAsync(Logger logger)
         {
             TcpClient newClient = await serverListener.AcceptTcpClientAsync();
-            TcpConnection client = new TcpConnection(newClient);
-            await client.HandleHttpRequestsAsync(bufferSize, logger);
+            TcpConnection client = new TcpConnection(newClient, settings);
+            await client.HandleHttpRequestsAsync(logger);
             client.CloseConnection();
         }
     }

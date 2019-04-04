@@ -58,13 +58,14 @@ namespace ProxyClasses
 
                     byte[] requestInBytes = Encoding.ASCII.GetBytes(httpRequestString);
                     await WriteMessageWithBufferAsync(proxyStream, requestInBytes, bufferSize);
-                    //MemoryStream ms = new MemoryStream();
-                    //await proxyStream.CopyToAsync(ms);
-                    byte[] responseBytes = await GetBytesFromReading(bufferSize, proxyStream);
-                    //ms.Dispose();
+                    MemoryStream ms = new MemoryStream();
+                    await proxyStream.CopyToAsync(ms);
+                    //byte[] responseBytes = await GetBytesFromReading(bufferSize, proxyStream);
+                    ms.Dispose();
                     proxyTcpClient.Dispose();
                     proxyStream.Dispose();
-                    return responseBytes;
+                    //return responseBytes;
+                    return ms.ToArray(); ;
                 }
             }
             catch (Exception)
@@ -75,9 +76,8 @@ namespace ProxyClasses
         }
         public async Task WriteMessageWithBufferAsync(NetworkStream destinationStream, byte[] messageBytes, int buffer)
         {
-            if (messageBytes == null) return;
             int index = 0;
-            while (index < messageBytes.Length)
+            while (index <= messageBytes.Length)
             {
                 int remainingBytes = messageBytes.Length - index;
                 if (remainingBytes < buffer) await destinationStream.WriteAsync(messageBytes, index, remainingBytes);
@@ -120,6 +120,19 @@ namespace ProxyClasses
                 memory.Dispose();
                 return memory.ToArray();
             }
+        }
+
+        public async Task<string> GetStringFromReading(int bufferSize, NetworkStream stream)
+        {
+            byte[] buffer = new byte[bufferSize];
+            //use memory stream to save all bytes
+            StringBuilder httpRequestSB = new StringBuilder();
+            do
+            {
+                int readRequestBytes = await stream.ReadAsync(buffer, 0, buffer.Length);
+                httpRequestSB.AppendFormat(ASCIIEncoding.ASCII.GetString(buffer, 0, readRequestBytes));
+            } while (stream.DataAvailable);
+            return httpRequestSB.ToString();
         }
 
         // COULD BE USEFULL FOR NEXT ASSIGNMENT
