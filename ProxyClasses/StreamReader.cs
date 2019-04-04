@@ -53,20 +53,19 @@ namespace ProxyClasses
                 Uri baseUri = new Uri($"http://{hostString}");
                 TcpClient proxyTcpClient = new TcpClient();
                 await proxyTcpClient.ConnectAsync(baseUri.Host, baseUri.Port);
-                NetworkStream proxyStream = proxyTcpClient.GetStream();
-                byte[] requestInBytes = Encoding.ASCII.GetBytes(httpRequestString);
-                await WriteMessageWithBufferAsync(proxyStream, requestInBytes, bufferSize);
-                MemoryStream ms = new MemoryStream();
-                await proxyStream.CopyToAsync(ms);
-                //byte[] responseBytes = await GetBytesFromReading(bufferSize, proxyStream);
-                ms.Dispose();
-                proxyTcpClient.Dispose();
-                proxyStream.Dispose();
-                return ms.ToArray(); ;
-            }
-            catch (ArgumentException err)
-            {
-                throw new BadRequestException(err.Message);
+                using (NetworkStream proxyStream = proxyTcpClient.GetStream())
+                {
+
+                    byte[] requestInBytes = Encoding.ASCII.GetBytes(httpRequestString);
+                    await WriteMessageWithBufferAsync(proxyStream, requestInBytes, bufferSize);
+                    //MemoryStream ms = new MemoryStream();
+                    //await proxyStream.CopyToAsync(ms);
+                    byte[] responseBytes = await GetBytesFromReading(bufferSize, proxyStream);
+                    //ms.Dispose();
+                    proxyTcpClient.Dispose();
+                    proxyStream.Dispose();
+                    return responseBytes;
+                }
             }
             catch (Exception)
             {
@@ -92,7 +91,7 @@ namespace ProxyClasses
             using (MemoryStream memory = new MemoryStream(message))
             {
                 memory.Position = 0;
-                if (message.Length == 0) throw new BadRequestException("Could not determine the stream");
+                if (message.Length == 0) throw new ArgumentException("Could not determine the stream");
                 var index = BinaryMatch(message, Encoding.ASCII.GetBytes("\r\n\r\n")) + 4;
                 var headers = Encoding.ASCII.GetString(message, 0, index);
                 memory.Position = index;

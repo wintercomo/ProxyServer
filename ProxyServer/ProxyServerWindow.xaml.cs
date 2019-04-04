@@ -35,21 +35,34 @@ namespace ProxyServer
         CacheItem cachedResponse;
         TcpClient tcpClient;
         byte[] responseData;
+
+        ProxyClasses.ProxyServer proxyServer;
+        Logger logger;
         public ProxyserverWindow()
         {
-        InitializeComponent();
-            settings = new ProxySettingsViewModel {
-                Port = 8090, CacheTimeout= 60000, BufferSize=200,
-                CheckModifiedContent =true, ContentFilterOn=true,
-                BasicAuthOn = false, AllowChangeHeaders= true,
-                LogRequestHeaders = false, LogContentIn= true,
-                LogContentOut=true, LogCLientInfo = true,
-                ServerRunning=false
+            InitializeComponent();
+            logger = new Logger(LogItems);
+            settings = new ProxySettingsViewModel
+            {
+                Port = 8090,
+                CacheTimeout = 60000,
+                BufferSize = 200,
+                CheckModifiedContent = true,
+                ContentFilterOn = true,
+                BasicAuthOn = false,
+                AllowChangeHeaders = true,
+                LogRequestHeaders = false,
+                LogContentIn = true,
+                LogContentOut = true,
+                LogCLientInfo = true,
+                ServerRunning = false
             };
+            proxyServer = new ProxyClasses.ProxyServer(settings);
             // set the binding
             settingsBlock.DataContext = settings;
             logListBox.ItemsSource = LogItems;
-            UpdateUIWithLogItem(new HttpRequest(HttpRequest.MESSAGE, settings) {
+            logger.Log(new HttpRequest()
+            {
                 LogItemInfo = "Log van:\r\n" +
                 "   * request headers\r\n" +
                 "   * Response headers\r\n" +
@@ -63,39 +76,42 @@ namespace ProxyServer
             // stop server if running
             if (settings.ServerRunning)
             {
-                StopProxyServer();
+                proxyServer.StopServer();
+                settings.ServerRunning = false;
                 return;
             }
-            tcpListner = new TcpListener(IPAddress.Any, settings.Port);
-            tcpListner.Start();
-            UpdateUIWithLogItem(new HttpRequest(HttpRequest.MESSAGE, settings) { LogItemInfo = "Listening for HTTP REQUEST" });
+            proxyServer.StartServer();
+            //tcpListner = new TcpListener(IPAddress.Any, settings.Port);
+            //tcpListner.Start();
+            //UpdateUIWithLogItem(new HttpRequest(HttpRequest.MESSAGE, settings) { LogItemInfo = "Listening for HTTP REQUEST" });
             settings.ServerRunning = true;
             try
             {
                 while (true)
                 {
-                    tcpClient = await tcpListner.AcceptTcpClientAsync();
-                    NetworkStream clientStream = tcpClient.GetStream();
-                    await ListenForHttpRequest(tcpClient);
-                    if(clientRequest != null) await HandleHttpRequest(clientStream);
-                    Task _3 = Task.Run(async () => await HandleProxyRequest(clientStream));
-                    if (settings.LogContentIn && clientRequest != null) UpdateUIWithLogItem(clientRequest);
-                    if (settings.LogContentOut)
-                    {
-                        //if(proxyResponse != null) UpdateUIWithLogItem(proxyResponse);
-                        if(cachedResponseObject != null) UpdateUIWithLogItem(cachedResponseObject);
-                    }
+                    await proxyServer.AcceptTcpClientAsync(logger);
+                    //tcpClient = await tcpListner.AcceptTcpClientAsync();
+                    //NetworkStream clientStream = tcpClient.GetStream();
+                    //await ListenForHttpRequest(tcpClient);
+                    //if (clientRequest != null) await HandleHttpRequest(clientStream);
+                    //Task _3 = Task.Run(async () => await HandleProxyRequest(clientStream));
+                    //if (settings.LogContentIn && clientRequest != null) UpdateUIWithLogItem(clientRequest);
+                    //if (settings.LogContentOut)
+                    //{
+                    //    //if(proxyResponse != null) UpdateUIWithLogItem(proxyResponse);
+                    //    if (cachedResponseObject != null) UpdateUIWithLogItem(cachedResponseObject);
+                    //}
                 }
             }
 
             catch (ObjectDisposedException)
             {
-                UpdateUIWithLogItem(new HttpRequest(HttpRequest.MESSAGE, settings) { LogItemInfo = "Server not running. Not handling requests: \r\n "});
+                UpdateUIWithLogItem(new HttpRequest(HttpRequest.ERROR, settings) { LogItemInfo = "Server stopped" });
             }
 
             catch (ArgumentException err)
             {
-                UpdateUIWithLogItem(new HttpRequest(HttpRequest.MESSAGE, settings) { LogItemInfo = "Argument Exception!: \r\n " + err.Message });
+                UpdateUIWithLogItem(new HttpRequest(HttpRequest.ERROR, settings) { LogItemInfo = "Argument Exception!: \r\n " + err.Message });
             }
             catch (UriFormatException err)
             {
@@ -103,27 +119,27 @@ namespace ProxyServer
             }
             catch (SocketException)
             {
-                UpdateUIWithLogItem(new HttpRequest(HttpRequest.MESSAGE, settings) { LogItemInfo = "Unable to find host" });
+                UpdateUIWithLogItem(new HttpRequest(HttpRequest.ERROR, settings) { LogItemInfo = "Unable to find host" });
             }
             catch (IOException err)
             {
                 UpdateUIWithLogItem(new HttpRequest(HttpRequest.MESSAGE, settings) { LogItemInfo = "Stream closed: \r\n " + err.Message });
-            }
-            catch (BadRequestException err)
-            {
-                UpdateUIWithLogItem(new HttpRequest(HttpRequest.MESSAGE, settings) { LogItemInfo = "Stream Error. LOG: \r\n " + err.Message });
             }
         }
         private void UpdateUIWithLogItem(HttpRequest logItem)
         {
             LogItems.Add(logItem);
         }
+        private void LogAnItem(String logItem)
+        {
+            LogItems.Add(new HttpRequest(HttpRequest.MESSAGE, settings) { LogItemInfo = logItem});
+        }
 
         private async Task ListenForHttpRequest(TcpClient tcpClient)
         {
             NetworkStream clientStream = tcpClient.GetStream();
             byte[] requestBytes = await streamReader.GetBytesFromReading(settings.BufferSize, clientStream);
-            string requestInfo = ASCIIEncoding.ASCII.GetString(requestBytes,0,requestBytes.Length);
+            string requestInfo = ASCIIEncoding.ASCII.GetString(requestBytes, 0, requestBytes.Length);
             // firefox spam requests
             if (!requestInfo.Contains("detectportal") || !requestInfo.Contains("pusher"))
             {
@@ -225,7 +241,7 @@ namespace ProxyServer
         private void StopProxyServer()
         {
             if (tcpListner != null)
-            UpdateUIWithLogItem(new HttpRequest(HttpRequest.MESSAGE, settings) { LogItemInfo = "Stopping proxy Server..." });
+                UpdateUIWithLogItem(new HttpRequest(HttpRequest.MESSAGE, settings) { LogItemInfo = "Stopping proxy Server..." });
             tcpListner.Stop();
             settings.ServerRunning = false;
             UpdateUIWithLogItem(new HttpRequest(HttpRequest.MESSAGE, settings) { LogItemInfo = "Proxy server Stopped Running" });

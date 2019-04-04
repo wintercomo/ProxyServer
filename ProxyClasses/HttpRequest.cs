@@ -27,6 +27,12 @@ namespace ProxyClasses
             this.type = type;
             this.settings = settings;
         }
+
+        public HttpRequest(string type = HttpRequest.MESSAGE)
+        {
+            this.type = type;
+            this.settings = null;
+        }
         public string Method
         {
             get { return this.method; }
@@ -46,14 +52,7 @@ namespace ProxyClasses
                 string sm = "";
                 foreach (KeyValuePair<string, string> entry in headers)
                 {
-                    if (entry.Key == "User-Agent" && !settings.LogCLientInfo)
-                    {
-                        // dont show the host header if settings say so
-                    }
-                    else
-                    {
-                        sm += $"{entry.Key}:{entry.Value}\r\n";
-                    }
+                    sm += $"{entry.Key}:{entry.Value}\r\n";
                 }
                 return sm; 
             }
@@ -68,12 +67,6 @@ namespace ProxyClasses
             {
                 // set headers to disable browser cache
                 UpdateHeader("Connection", " Close");
-                if (settings.AllowChangeHeaders)
-                {
-                    // Remove server and user headers (From assigment discription)
-                    headers.Remove("User-Agent");
-                    headers.Remove("Server");
-                }
                 return $"{Method}\r\n{Headers}\r\n{Body}";
             }
         }
@@ -85,11 +78,7 @@ namespace ProxyClasses
                 {
                     return logItemInfo;
                 }
-                if (settings.LogRequestHeaders)
-                {
-                    return $"{Method}\r\n{Headers}\r\n{Body}";
-                }
-                    return $"{Method}\r\n{Body}";
+                return $"{Method}\r\n{Headers}\r\n{Body}";
             }
             set
             {

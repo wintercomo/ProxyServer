@@ -28,9 +28,5 @@
     <Position X="3" Y="1.25" Width="2.25" />
     <TypeIdentifier />
   </Class>
-  <Class Name="ProxyClasses.BadRequestException">
-    <Position X="5.75" Y="0.75" Width="1.5" />
-    <TypeIdentifier />
-  </Class>
   <Font Name="Segoe UI" Size="9" />
 </ClassDiagram>
