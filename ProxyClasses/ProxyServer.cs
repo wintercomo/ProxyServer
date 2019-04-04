@@ -32,10 +32,18 @@ namespace ProxyClasses
 
         public async Task AcceptTcpClientAsync(Logger logger)
         {
-            TcpClient newClient = await serverListener.AcceptTcpClientAsync();
-            TcpConnection client = new TcpConnection(newClient, settings);
-            await client.HandleHttpRequestsAsync(logger);
-            client.CloseConnection();
+            try
+            {
+                TcpClient newClient = await serverListener.AcceptTcpClientAsync();
+                TcpConnection client = new TcpConnection(newClient, settings);
+                await client.HandleHttpRequestsAsync(logger);
+                client.CloseConnection();
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
     }
 }

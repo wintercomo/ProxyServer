@@ -9,39 +9,30 @@ namespace ProxyClasses
     public class HttpRequest : BindableBase
     {
         public const string REQUEST = "REQUEST";
-        public const string PROXY_REQUEST = "PROXY REQUEST";
         public const string RESPONSE = "RESPONSE";
+        public const string CACHED_RESPONSE = "CACHED RESPONSE";
         public const string MESSAGE = "MESSAGE";
         public const string ERROR = "ERROR";
-        public const string CACHED_RESPONSE = "CACHED RESPONSE";
         private string logItemInfo;
-        private string type; // { PROXY, REQUEST, RESPONSE, MESSAGE };
+        private readonly string type;
         private string method;
         private string body;
-        ProxySettingsViewModel settings;
         Dictionary<string, string> headers = new Dictionary<string, string>();
-
-
-        public HttpRequest(string type, ProxySettingsViewModel settings)
-        {
-            this.type = type;
-            this.settings = settings;
-        }
 
         public HttpRequest(string type = HttpRequest.MESSAGE)
         {
             this.type = type;
-            this.settings = null;
         }
         public string Method
         {
             get { return this.method; }
+            private set { this.method = value; }
         }
         public string Type
         {
             get { return this.type; }
         }
-        public Dictionary<string,string> getHeadersList
+        public Dictionary<string, string> getHeadersList
         {
             get { return this.headers; }
         }
@@ -50,11 +41,8 @@ namespace ProxyClasses
             get
             {
                 string sm = "";
-                foreach (KeyValuePair<string, string> entry in headers)
-                {
-                    sm += $"{entry.Key}:{entry.Value}\r\n";
-                }
-                return sm; 
+                foreach (KeyValuePair<string, string> entry in headers) sm += $"{entry.Key}:{entry.Value}\r\n";
+                return sm;
             }
         }
         public string Body
@@ -73,13 +61,7 @@ namespace ProxyClasses
         //TODO edit this function so the type is used to display different data
         public string LogItemInfo
         {
-            get {
-                if (type == "MESSAGE")
-                {
-                    return logItemInfo;
-                }
-                return $"{Method}\r\n{Headers}\r\n{Body}";
-            }
+            get => this.type.Equals(HttpRequest.MESSAGE) ? logItemInfo : $"{Method}\r\n{Headers}\r\n{Body}";
             set
             {
                 SeperateProtocolElements(value);
@@ -95,41 +77,24 @@ namespace ProxyClasses
             string[] result = Regex.Split(value, "\r\n|\r|\n");
             for (int i = 0; i < result.Length; i++)
             {
-                if (i == 0)
-                {
-                    this.method = result[i];
-                }
+                if (i == 0) this.Method = result[i];
                 else if (i > 0 && !reachedBody)
                 {
-                    if (result[i] == "")
-                    {
-                        reachedBody = true;
-                    }
-                    else
-                    {
-                        SaveHeader(result, i);
-                    }
+                    if (result[i] == "") reachedBody = true;
+                    else SaveHeader(result, i);
                 }
-                else
-                {
-                    this.body += result[i];
-                }
+                else this.body += result[i];
             }
         }
         public void UpdateHeader(string headerType, string header)
         {
-            if (headers.ContainsKey(headerType))
-            {
-                headers.Remove(headerType);
-            }
+            if (headers.ContainsKey(headerType)) headers.Remove(headerType);
             headers.Add(headerType, header);
         }
         public string GetHeader(string headerType)
         {
-            if (headers.ContainsKey(headerType))
-            {
-                return headers[headerType];
-            }return "";
+            if (headers.ContainsKey(headerType)) return headers[headerType];
+            return "";
         }
         private void SaveHeader(string[] result, int i)
         {

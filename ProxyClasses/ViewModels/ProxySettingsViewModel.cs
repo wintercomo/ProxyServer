@@ -10,19 +10,18 @@ namespace ProxyServer
 {
     public class ProxySettingsViewModel : BindableBase
     {
-        private Int32 port;
-        private Int32 cacheTimeout;
-        private Int32 bufferSize;
-        private Boolean checkModifiedContent;
-        private Boolean contentFilterOn;
-        private Boolean basicAuthOn;
-        private Boolean allowChangeHeaders;
-        private Boolean logRequestHeaders;
-        private Boolean logContentIn;
-        private Boolean logContentOut;
-        private Boolean logCLientInfo;
-        private Boolean serverRunning;
-
+        private Int32 port = 8090;
+        private Int32 cacheTimeout=60000;
+        private Int32 bufferSize = 200;
+        private Boolean checkModifiedContent = false;
+        private Boolean contentFilterOn = false;
+        private Boolean basicAuthOn = false;
+        private Boolean allowChangeHeaders = false;
+        private Boolean logRequestHeaders = false;
+        private Boolean logContentIn = true;
+        private Boolean logContentOut=true;
+        private Boolean logCLientInfo=true;
+        private Boolean serverRunning = false;
         public Int32 Port
         {
             get { return port; }
