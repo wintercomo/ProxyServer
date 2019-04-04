@@ -54,7 +54,6 @@ namespace ProxyServer
                 {
                     value = 1;
                 }
-                Console.WriteLine("SETTINNG" + value);
                 if (SetProperty<int>(ref bufferSize, value) && value > 0)
                 {
                     this.bufferSize = value;

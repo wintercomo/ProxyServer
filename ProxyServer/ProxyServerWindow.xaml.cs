@@ -35,9 +35,6 @@ namespace ProxyServer
         CacheItem cachedResponse;
         TcpClient tcpClient;
         byte[] responseData;
-        object _itemsLock = new object ();
-        delegate void updateUIDelegate(HttpRequest httpRequest);
-        static updateUIDelegate updateUIWithDelegate;
         public ProxyserverWindow()
         {
         InitializeComponent();
@@ -49,12 +46,10 @@ namespace ProxyServer
                 LogContentOut=true, LogCLientInfo = true,
                 ServerRunning=false
             };
-            BindingOperations.EnableCollectionSynchronization(LogItems, _itemsLock);
-            updateUIWithDelegate = new updateUIDelegate(UpdateUIWithLogItem);
             // set the binding
             settingsBlock.DataContext = settings;
             logListBox.ItemsSource = LogItems;
-            updateUIWithDelegate(new HttpRequest(HttpRequest.MESSAGE, settings) {
+            UpdateUIWithLogItem(new HttpRequest(HttpRequest.MESSAGE, settings) {
                 LogItemInfo = "Log van:\r\n" +
                 "   * request headers\r\n" +
                 "   * Response headers\r\n" +
@@ -167,6 +162,7 @@ namespace ProxyServer
             proxyResponse = new HttpRequest(HttpRequest.RESPONSE, settings) { LogItemInfo = responseString };
             if (proxyResponse.Method.Contains("304 Not Modified"))
             {
+                Console.WriteLine($"Content not modified for {clientRequest.Method}");
                 responseData = cachedResponse.ResponseBytes;
                 //proxyResponse = new HttpRequest(HttpRequest.CACHED_RESPONSE, settings) { LogItemInfo = responseString };
                 //await streamReader.WriteMessageWithBufferAsync(clientStream, responseData, settings.BufferSize);
