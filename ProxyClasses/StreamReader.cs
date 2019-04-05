@@ -46,32 +46,24 @@ namespace ProxyClasses
         }
         public async Task<byte[]> MakeProxyRequestAsync(HttpRequest httpRequest, int bufferSize)
         {
-            try
-            {
-                string httpRequestString = httpRequest.HttpString;
-                string hostString = httpRequest.GetHeader("Host");
-                Uri baseUri = new Uri($"http://{hostString}");
-                TcpClient proxyTcpClient = new TcpClient();
-                await proxyTcpClient.ConnectAsync(baseUri.Host, baseUri.Port);
-                using (NetworkStream proxyStream = proxyTcpClient.GetStream())
-                {
-
-                    byte[] requestInBytes = Encoding.ASCII.GetBytes(httpRequestString);
-                    await WriteMessageWithBufferAsync(proxyStream, requestInBytes, bufferSize);
-                    MemoryStream ms = new MemoryStream();
-                    await proxyStream.CopyToAsync(ms);
-                    //byte[] responseBytes = await GetBytesFromReading(bufferSize, proxyStream);
-                    ms.Dispose();
-                    proxyTcpClient.Dispose();
-                    proxyStream.Dispose();
-                    //return responseBytes;
-                    return ms.ToArray(); ;
-                }
-            }
-            catch (Exception)
+            string httpRequestString = httpRequest.HttpString;
+            string hostString = httpRequest.GetHeader("Host");
+            Uri baseUri = new Uri($"http://{hostString}");
+            TcpClient proxyTcpClient = new TcpClient();
+            await proxyTcpClient.ConnectAsync(baseUri.Host, baseUri.Port);
+            using (NetworkStream proxyStream = proxyTcpClient.GetStream())
             {
 
-                throw;
+                byte[] requestInBytes = Encoding.ASCII.GetBytes(httpRequestString);
+                await WriteMessageWithBufferAsync(proxyStream, requestInBytes, bufferSize);
+                MemoryStream ms = new MemoryStream();
+                await proxyStream.CopyToAsync(ms);
+                //byte[] responseBytes = await GetBytesFromReading(bufferSize, proxyStream);
+                ms.Dispose();
+                proxyTcpClient.Dispose();
+                proxyStream.Dispose();
+                //return responseBytes;
+                return ms.ToArray(); ;
             }
         }
         public async Task WriteMessageWithBufferAsync(NetworkStream destinationStream, byte[] messageBytes, int buffer)

@@ -11,7 +11,7 @@ namespace ProxyServer
     public class ProxySettingsViewModel : BindableBase
     {
         private Int32 port = 8090;
-        private Int32 cacheTimeout=60000;
+        private Int32 cacheTimeout = 60000;
         private Int32 bufferSize = 200;
         private Boolean checkModifiedContent = false;
         private Boolean contentFilterOn = false;
@@ -19,18 +19,15 @@ namespace ProxyServer
         private Boolean allowChangeHeaders = false;
         private Boolean logRequestHeaders = false;
         private Boolean logContentIn = true;
-        private Boolean logContentOut=true;
-        private Boolean logCLientInfo=true;
+        private Boolean logContentOut = true;
+        private Boolean logCLientInfo = true;
         private Boolean serverRunning = false;
         public Int32 Port
         {
             get { return port; }
             set
             {
-                if (SetProperty<int>(ref port, value))
-                {
-                    this.port = value;
-                }
+                if (SetProperty<int>(ref port, value)) this.port = value;
             }
         }
         public Int32 CacheTimeout

@@ -26,7 +26,10 @@ namespace ProxyClasses
         public string Method
         {
             get { return this.method; }
-            private set { this.method = value; }
+            private set
+            {
+                if (SetProperty<string>(ref method, value)) this.method = value;
+            }
         }
         public string Type
         {
@@ -65,7 +68,7 @@ namespace ProxyClasses
             set
             {
                 SeperateProtocolElements(value);
-                this.logItemInfo = value;
+                if (SetProperty<string>(ref logItemInfo, value)) this.logItemInfo = value;
             }
         }
 
@@ -83,7 +86,8 @@ namespace ProxyClasses
                     if (result[i] == "") reachedBody = true;
                     else SaveHeader(result, i);
                 }
-                else this.body += result[i];
+                
+                else if (SetProperty<string>(ref body, value)) this.body += result[i];
             }
         }
         public void UpdateHeader(string headerType, string header)
