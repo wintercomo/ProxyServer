@@ -1,21 +1,10 @@
 ﻿using ProxyClasses;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.IO;
-using System.Linq;
-using System.Net;
 using System.Net.Sockets;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Media;
-using StreamReader = ProxyClasses.StreamReader;
 
 namespace ProxyServer
 {
@@ -24,12 +13,10 @@ namespace ProxyServer
     /// </summary>
     public partial class ProxyserverWindow : Window
     {
-        ObservableCollection<HttpRequest> LogItems = new ObservableCollection<HttpRequest>();
-        Cacher cacher = new Cacher();
-        ProxySettingsViewModel settings;
-
-        ProxyClasses.ProxyServer proxyServer;
-        Logger logger;
+        readonly ObservableCollection<HttpRequest> LogItems = new ObservableCollection<HttpRequest>();
+        readonly ProxySettingsViewModel settings;
+        readonly ProxyClasses.ProxyServer proxyServer;
+        readonly Logger logger;
         public ProxyserverWindow()
         {
             InitializeComponent();
@@ -77,6 +64,9 @@ namespace ProxyServer
             catch (UriFormatException)
             {
                 logger.Log(new HttpRequest(HttpRequest.ERROR) { LogItemInfo = $"Invalid hostname!" });
+            }
+            catch (ObjectDisposedException)
+            {
             }
             catch (SocketException)
             {

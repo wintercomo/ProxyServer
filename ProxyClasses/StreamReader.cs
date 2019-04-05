@@ -49,19 +49,21 @@ namespace ProxyClasses
             string httpRequestString = httpRequest.HttpString;
             string hostString = httpRequest.GetHeader("Host");
             Uri baseUri = new Uri($"http://{hostString}");
-            using (TcpClient proxyTcpClient = new TcpClient())
+            TcpClient proxyTcpClient = new TcpClient();
+            await proxyTcpClient.ConnectAsync(baseUri.Host, baseUri.Port);
+            using (NetworkStream proxyStream = proxyTcpClient.GetStream())
             {
-                await proxyTcpClient.ConnectAsync(baseUri.Host, baseUri.Port);
-                using (NetworkStream proxyStream = proxyTcpClient.GetStream())
-                {
-                    byte[] requestInBytes = Encoding.ASCII.GetBytes(httpRequestString);
-                    await WriteMessageWithBufferAsync(proxyStream, requestInBytes, bufferSize);
-                    using (MemoryStream ms = new MemoryStream())
-                    {
-                        await proxyStream.CopyToAsync(ms);
-                        return ms.ToArray(); ;
-                    }
-                }
+
+                byte[] requestInBytes = Encoding.ASCII.GetBytes(httpRequestString);
+                await WriteMessageWithBufferAsync(proxyStream, requestInBytes, bufferSize);
+                MemoryStream ms = new MemoryStream();
+                await proxyStream.CopyToAsync(ms);
+                //byte[] responseBytes = await GetBytesFromReading(bufferSize, proxyStream);
+                ms.Dispose();
+                proxyTcpClient.Dispose();
+                proxyStream.Dispose();
+                //return responseBytes;
+                return ms.ToArray(); ;
             }
         }
         public async Task WriteMessageWithBufferAsync(NetworkStream destinationStream, byte[] messageBytes, int buffer)
@@ -82,10 +84,15 @@ namespace ProxyClasses
             {
                 await memory.WriteAsync(message, 0, message.Length);
                 memory.Position = 0;
+                if (message.Length == 0) throw new ArgumentException("Could not determine the stream");
                 var index = BinaryMatch(message, Encoding.ASCII.GetBytes("\r\n\r\n")) + 4;
                 var headers = Encoding.ASCII.GetString(message, 0, index);
                 memory.Position = index;
-                await memory.WriteAsync(placeholderBytes, 0, placeholderBytes.Length);
+                if (headers.Contains("Content-Type: image"))
+                {
+                    await memory.WriteAsync(placeholderBytes, 0, placeholderBytes.Length);
+                }
+                memory.Dispose();
                 return memory.ToArray();
             }
         }
@@ -101,6 +108,7 @@ namespace ProxyClasses
                     int readBytes = await stream.ReadAsync(buffer, 0, buffer.Length);
                     await memory.WriteAsync(buffer, 0, readBytes);
                 } while (stream.DataAvailable);
+                memory.Dispose();
                 return memory.ToArray();
             }
         }

@@ -31,14 +31,12 @@ namespace ProxyClasses
             logger.Log(clientRequest);
 
             // get response from proxy request
-            var responseData = await streamReader.MakeProxyRequestAsync(clientRequest, bufferSize);
-            string responseString = Encoding.ASCII.GetString(responseData, 0, responseData.Length);
+            var responseBytes = await streamReader.MakeProxyRequestAsync(clientRequest, bufferSize);
+            if (settings.ContentFilterOn) responseBytes = await streamReader.ReplaceImages(responseBytes);
+            await streamReader.WriteMessageWithBufferAsync(clientStream, responseBytes, bufferSize);
+            string responseString = Encoding.ASCII.GetString(responseBytes, 0, responseBytes.Length);
             HttpRequest proxyResponse = new HttpRequest(HttpRequest.RESPONSE) { LogItemInfo = responseString };
             logger.Log(proxyResponse);
-
-            // filter content and send it back to client
-            if (settings.ContentFilterOn && proxyResponse.GetHeader("Content-Type").Contains("image")) responseData = await streamReader.ReplaceImages(responseData);
-            await streamReader.WriteMessageWithBufferAsync(clientStream, responseData, bufferSize).ConfigureAwait(false);
         }
 
         internal void CloseConnection()

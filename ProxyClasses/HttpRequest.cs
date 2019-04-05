@@ -17,8 +17,6 @@ namespace ProxyClasses
         private readonly string type;
         private string method;
         private string body;
-        Dictionary<string, string> headers = new Dictionary<string, string>();
-
         public HttpRequest(string type = HttpRequest.MESSAGE)
         {
             this.type = type;
@@ -35,14 +33,11 @@ namespace ProxyClasses
         {
             get { return this.type; }
         }
-        public Dictionary<string, string> getHeadersList
-        {
-            get { return this.headers; }
-        }
+        public Dictionary<string, string> getHeadersList { get; } = new Dictionary<string, string>();
 
         internal void ClearHeaders()
         {
-            this.headers.Clear();
+            getHeadersList.Clear();
         }
 
         public string Headers
@@ -50,7 +45,7 @@ namespace ProxyClasses
             get
             {
                 string sm = "";
-                foreach (KeyValuePair<string, string> entry in headers) sm += $"{entry.Key}:{entry.Value}\r\n";
+                foreach (KeyValuePair<string, string> entry in getHeadersList) sm += $"{entry.Key}:{entry.Value}\r\n";
                 return sm;
             }
         }
@@ -98,12 +93,12 @@ namespace ProxyClasses
         }
         public void UpdateHeader(string headerType, string header)
         {
-            if (headers.ContainsKey(headerType)) headers.Remove(headerType);
-            headers.Add(headerType, header);
+            if (getHeadersList.ContainsKey(headerType)) getHeadersList.Remove(headerType);
+            getHeadersList.Add(headerType, header);
         }
         public string GetHeader(string headerType)
         {
-            if (headers.ContainsKey(headerType)) return headers[headerType];
+            if (getHeadersList.ContainsKey(headerType)) return getHeadersList[headerType];
             return "";
         }
         private void SaveHeader(string[] result, int i)
