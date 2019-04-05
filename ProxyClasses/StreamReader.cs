@@ -49,21 +49,19 @@ namespace ProxyClasses
             string httpRequestString = httpRequest.HttpString;
             string hostString = httpRequest.GetHeader("Host");
             Uri baseUri = new Uri($"http://{hostString}");
-            TcpClient proxyTcpClient = new TcpClient();
-            await proxyTcpClient.ConnectAsync(baseUri.Host, baseUri.Port);
-            using (NetworkStream proxyStream = proxyTcpClient.GetStream())
+            using (TcpClient proxyTcpClient = new TcpClient())
             {
-
-                byte[] requestInBytes = Encoding.ASCII.GetBytes(httpRequestString);
-                await WriteMessageWithBufferAsync(proxyStream, requestInBytes, bufferSize);
-                MemoryStream ms = new MemoryStream();
-                await proxyStream.CopyToAsync(ms);
-                //byte[] responseBytes = await GetBytesFromReading(bufferSize, proxyStream);
-                ms.Dispose();
-                proxyTcpClient.Dispose();
-                proxyStream.Dispose();
-                //return responseBytes;
-                return ms.ToArray(); ;
+                await proxyTcpClient.ConnectAsync(baseUri.Host, baseUri.Port);
+                using (NetworkStream proxyStream = proxyTcpClient.GetStream())
+                {
+                    byte[] requestInBytes = Encoding.ASCII.GetBytes(httpRequestString);
+                    await WriteMessageWithBufferAsync(proxyStream, requestInBytes, bufferSize);
+                    using (MemoryStream ms = new MemoryStream())
+                    {
+                        await proxyStream.CopyToAsync(ms);
+                        return ms.ToArray(); ;
+                    }
+                }
             }
         }
         public async Task WriteMessageWithBufferAsync(NetworkStream destinationStream, byte[] messageBytes, int buffer)
@@ -80,20 +78,14 @@ namespace ProxyClasses
         public async Task<byte[]> ReplaceImages(byte[] message)
         {
 
-            using (MemoryStream memory = new MemoryStream(message))
+            using (MemoryStream memory = new MemoryStream())
             {
+                await memory.WriteAsync(message, 0, message.Length);
                 memory.Position = 0;
-                if (message.Length == 0) throw new ArgumentException("Could not determine the stream");
                 var index = BinaryMatch(message, Encoding.ASCII.GetBytes("\r\n\r\n")) + 4;
                 var headers = Encoding.ASCII.GetString(message, 0, index);
                 memory.Position = index;
-                if (headers.Contains("Content-Type: image"))
-                {
-                    //use memory to read the body. replace the image if settings say so
-                    //byte[] placeholderBytes = File.ReadAllBytes(@"Assets\Placeholder.png");
-                    await memory.WriteAsync(placeholderBytes, 0, placeholderBytes.Length);
-                }
-                memory.Dispose();
+                await memory.WriteAsync(placeholderBytes, 0, placeholderBytes.Length);
                 return memory.ToArray();
             }
         }
@@ -109,7 +101,6 @@ namespace ProxyClasses
                     int readBytes = await stream.ReadAsync(buffer, 0, buffer.Length);
                     await memory.WriteAsync(buffer, 0, readBytes);
                 } while (stream.DataAvailable);
-                memory.Dispose();
                 return memory.ToArray();
             }
         }

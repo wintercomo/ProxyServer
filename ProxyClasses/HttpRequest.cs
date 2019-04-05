@@ -39,6 +39,12 @@ namespace ProxyClasses
         {
             get { return this.headers; }
         }
+
+        internal void ClearHeaders()
+        {
+            this.headers.Clear();
+        }
+
         public string Headers
         {
             get
@@ -87,7 +93,7 @@ namespace ProxyClasses
                     else SaveHeader(result, i);
                 }
                 
-                else if (SetProperty<string>(ref body, value)) this.body += result[i];
+                else this.body += result[i];
             }
         }
         public void UpdateHeader(string headerType, string header)

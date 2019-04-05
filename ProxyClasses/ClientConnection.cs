@@ -32,10 +32,13 @@ namespace ProxyClasses
 
             // get response from proxy request
             var responseData = await streamReader.MakeProxyRequestAsync(clientRequest, bufferSize);
-            await streamReader.WriteMessageWithBufferAsync(clientStream, responseData, bufferSize);
             string responseString = Encoding.ASCII.GetString(responseData, 0, responseData.Length);
             HttpRequest proxyResponse = new HttpRequest(HttpRequest.RESPONSE) { LogItemInfo = responseString };
             logger.Log(proxyResponse);
+
+            // filter content and send it back to client
+            if (settings.ContentFilterOn && proxyResponse.GetHeader("Content-Type").Contains("image")) responseData = await streamReader.ReplaceImages(responseData);
+            await streamReader.WriteMessageWithBufferAsync(clientStream, responseData, bufferSize).ConfigureAwait(false);
         }
 
         internal void CloseConnection()

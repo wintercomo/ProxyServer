@@ -23,6 +23,14 @@ namespace ProxyClasses
             else
             {
                 if (!settings.LogCLientInfo) logItem.UpdateHeader("User-Agent", "");
+                if (!settings.LogRequestHeaders)
+                {
+                    //Make a copy of item so request wont fail
+                    HttpRequest logItemWithoutHeaders = new HttpRequest(logItem.Type) { LogItemInfo = logItem.LogItemInfo}; 
+                    logItemWithoutHeaders.ClearHeaders();
+                    logItems.Add(logItemWithoutHeaders);
+                    return;
+                }
                 logItems.Add(logItem);
             }
         }
