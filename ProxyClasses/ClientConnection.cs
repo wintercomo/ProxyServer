@@ -37,10 +37,24 @@ namespace ProxyClasses
                 var knownResponse = cacher.GetKnownResponse(clientRequest.Method);
                 if (!cacher.OlderThanTimeout(knownResponse))
                 {
-                    var knownResponseBytes = knownResponse.ResponseBytes;
+                    byte[] knownResponseBytes = knownResponse.ResponseBytes;
                     if (settings.ContentFilterOn) knownResponseBytes = await streamReader.ReplaceImages(knownResponseBytes);
+                    HttpRequest cachedResponse = new HttpRequest(HttpRequest.CACHED_RESPONSE) { LogItemInfo = ASCIIEncoding.ASCII.GetString(knownResponseBytes) };
+
+                    string modifiedDate = cachedResponse.GetHeader("Last-Modified");
+                    if (modifiedDate != "" && settings.CheckModifiedContent)
+                    {
+                        clientRequest.UpdateHeader("If-Modified-Since", $" {modifiedDate}");
+                        var tmpBytes = await streamReader.MakeProxyRequestAsync(clientRequest, bufferSize);
+                        if (!ASCIIEncoding.ASCII.GetString(tmpBytes).Contains("304 Not Modified"))
+                        {
+                            await streamReader.WriteMessageWithBufferAsync(clientStream, tmpBytes, bufferSize);
+                            logger.Log(new HttpRequest() { LogItemInfo = "Content not modified" });
+                            return;
+                        }
+                    }
                     await streamReader.WriteMessageWithBufferAsync(clientStream, knownResponseBytes, bufferSize);
-                    logger.Log(new HttpRequest(HttpRequest.CACHED_RESPONSE) { LogItemInfo = ASCIIEncoding.ASCII.GetString(knownResponseBytes) });
+                    logger.Log(cachedResponse);
                     return;
                 }
                 cacher.RemoveItem(clientRequest.Method);

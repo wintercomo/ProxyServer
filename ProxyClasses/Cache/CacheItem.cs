@@ -6,15 +6,13 @@ namespace ProxyClasses
 {
     public class CacheItem
     {
-        private byte[] responseBytes;
-        DateTime timeSaved;
-        public DateTime TimeSaved { get => timeSaved; set => timeSaved = value; }
-        public byte[] ResponseBytes { get => responseBytes; set => responseBytes = value; }
+        public DateTime TimeSaved { get; private set; }
+        public byte[] ResponseBytes { get; private set; }
 
         public CacheItem(byte[] requestBytes)
         {
-            this.responseBytes = requestBytes;
-            this.timeSaved = DateTime.Now;
+            this.ResponseBytes = requestBytes;
+            this.TimeSaved = DateTime.Now;
         }
 
     }
