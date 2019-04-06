@@ -21,6 +21,7 @@ namespace ProxyClasses
         {
             this.type = type;
         }
+        public Dictionary<string, string> getHeadersList { get; } = new Dictionary<string, string>();
         public string Method
         {
             get { return this.method; }
@@ -33,7 +34,6 @@ namespace ProxyClasses
         {
             get { return this.type; }
         }
-        public Dictionary<string, string> getHeadersList { get; } = new Dictionary<string, string>();
 
         internal void ClearHeaders()
         {
@@ -49,6 +49,12 @@ namespace ProxyClasses
                 return sm;
             }
         }
+
+        internal void RemoveHeader(string v)
+        {
+            getHeadersList.Remove(v);
+        }
+
         public string Body
         {
             get { return this.body; }
