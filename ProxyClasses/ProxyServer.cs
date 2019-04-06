@@ -17,8 +17,8 @@ namespace ProxyClasses
         public ProxyServer(ProxySettingsViewModel proxySettings)
         {
             serverListener = new TcpListener(IPAddress.Any, proxySettings.Port);
-            this.cacher = new Cacher();
             this.settings = proxySettings;
+            this.cacher = new Cacher(settings);
         }
 
         public void StartServer()

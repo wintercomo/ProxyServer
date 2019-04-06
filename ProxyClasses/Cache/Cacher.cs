@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ProxyServer;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -7,6 +8,11 @@ namespace ProxyClasses
     public class Cacher
     {
         Dictionary<string, CacheItem> knowRequests = new Dictionary<string, CacheItem>();
+        ProxySettingsViewModel settings;
+        public Cacher(ProxySettingsViewModel settings)
+        {
+            this.settings = settings;
+        }
         public void addRequest(string request, byte[] response)
         {
             CacheItem cacheItem = new CacheItem(response);
@@ -16,9 +22,9 @@ namespace ProxyClasses
         {
             knowRequests.Remove(key);
         }
-        public bool OlderThanTimeout(CacheItem item, Int32 cacheTimeout)
+        public bool OlderThanTimeout(CacheItem item)
         {
-            return ((DateTime.Now - item.TimeSaved).TotalSeconds > cacheTimeout);
+            return ((DateTime.Now - item.TimeSaved).TotalSeconds > settings.CacheTimeout);
         }
         public CacheItem GetKnownResponse(string request)
         {

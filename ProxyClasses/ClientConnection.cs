@@ -35,11 +35,15 @@ namespace ProxyClasses
             if (cacher.RequestKnown(clientRequest.Method))
             {
                 var knownResponse = cacher.GetKnownResponse(clientRequest.Method);
-                var knownResponseBytes = knownResponse.ResponseBytes;
-                if (settings.ContentFilterOn) knownResponseBytes = await streamReader.ReplaceImages(knownResponseBytes);
-                await streamReader.WriteMessageWithBufferAsync(clientStream, knownResponseBytes, bufferSize);
-                logger.Log(new HttpRequest(HttpRequest.CACHED_RESPONSE) { LogItemInfo = ASCIIEncoding.ASCII.GetString(knownResponseBytes) });
-                return;
+                if (!cacher.OlderThanTimeout(knownResponse))
+                {
+                    var knownResponseBytes = knownResponse.ResponseBytes;
+                    if (settings.ContentFilterOn) knownResponseBytes = await streamReader.ReplaceImages(knownResponseBytes);
+                    await streamReader.WriteMessageWithBufferAsync(clientStream, knownResponseBytes, bufferSize);
+                    logger.Log(new HttpRequest(HttpRequest.CACHED_RESPONSE) { LogItemInfo = ASCIIEncoding.ASCII.GetString(knownResponseBytes) });
+                    return;
+                }
+                cacher.RemoveItem(clientRequest.Method);
             }
 
             // get response from proxy request
