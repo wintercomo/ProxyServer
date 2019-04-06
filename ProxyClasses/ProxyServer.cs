@@ -13,10 +13,11 @@ namespace ProxyClasses
     {
         TcpListener serverListener;
         ProxySettingsViewModel settings;
-
+        Cacher cacher;
         public ProxyServer(ProxySettingsViewModel proxySettings)
         {
             serverListener = new TcpListener(IPAddress.Any, proxySettings.Port);
+            this.cacher = new Cacher();
             this.settings = proxySettings;
         }
 
@@ -35,7 +36,7 @@ namespace ProxyClasses
             try
             {
                 TcpClient newClient = await serverListener.AcceptTcpClientAsync();
-                TcpConnection client = new TcpConnection(newClient, settings);
+                TcpConnection client = new TcpConnection(newClient, settings, cacher);
                 await client.HandleHttpRequestsAsync(logger);
                 client.CloseConnection();
             }
