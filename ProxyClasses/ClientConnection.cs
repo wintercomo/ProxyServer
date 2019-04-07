@@ -44,23 +44,18 @@ namespace ProxyClasses
                     }
                     cacher.RemoveItem(clientRequest.Method);
                 }
-                byte[] responseBytes = await streamReader.MakeProxyRequestAsync(clientRequest, settings.BufferSize);
-                await HandleProxyResponse(logger, clientStream, clientRequest, responseBytes);
+                // get response from proxy request and send to client
+                var responseBytes = await streamReader.MakeProxyRequestAsync(clientRequest, settings.BufferSize);
+                cacher.addRequest(clientRequest.Method, responseBytes);
+                if (settings.ContentFilterOn) responseBytes = await streamReader.ReplaceImages(responseBytes);
+                await streamReader.WriteMessageWithBufferAsync(clientStream, responseBytes, settings.BufferSize);
+
+                string responseString = Encoding.ASCII.GetString(responseBytes, 0, responseBytes.Length);
+                HttpRequest proxyResponse = new HttpRequest(HttpRequest.RESPONSE) { LogItemInfo = responseString };
+                if (settings.AllowChangeHeaders) proxyResponse.RemoveHeader("Server");
+                logger.Log(proxyResponse);
             }
         }
-
-        private async Task HandleProxyResponse(Logger logger, NetworkStream clientStream, HttpRequest clientRequest, byte[] responseBytes)
-        {
-            cacher.addRequest(clientRequest.Method, responseBytes);
-            if (settings.ContentFilterOn) responseBytes = await streamReader.ReplaceImages(responseBytes);
-            string responseString = Encoding.ASCII.GetString(responseBytes, 0, responseBytes.Length);
-            HttpRequest proxyResponse = new HttpRequest(HttpRequest.RESPONSE) { LogItemInfo = responseString, MessageBytes = responseBytes };
-
-            if (settings.AllowChangeHeaders) proxyResponse.RemoveHeader("Server");
-            await streamReader.WriteMessageWithBufferAsync(clientStream, proxyResponse.MessageBytes, settings.BufferSize);
-            logger.Log(proxyResponse);
-        }
-
         private async Task HandleCachedResponse(Logger logger, int bufferSize, NetworkStream clientStream, HttpRequest clientRequest, CacheItem knownResponse)
         {
             byte[] knownResponseBytes = knownResponse.ResponseBytes;
