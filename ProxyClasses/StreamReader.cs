@@ -95,18 +95,5 @@ namespace ProxyClasses
                 return memory.ToArray();
             }
         }
-
-        public async Task<string> GetStringFromReading(int bufferSize, NetworkStream stream)
-        {
-            byte[] buffer = new byte[bufferSize];
-            //use memory stream to save all bytes
-            StringBuilder httpRequestSB = new StringBuilder();
-            do
-            {
-                int readRequestBytes = await stream.ReadAsync(buffer, 0, buffer.Length);
-                httpRequestSB.AppendFormat(ASCIIEncoding.ASCII.GetString(buffer, 0, readRequestBytes));
-            } while (stream.DataAvailable);
-            return httpRequestSB.ToString();
-        }
     }
 }

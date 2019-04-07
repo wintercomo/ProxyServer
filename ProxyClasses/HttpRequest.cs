@@ -2,7 +2,10 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
+using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace ProxyClasses
 {
@@ -14,51 +17,49 @@ namespace ProxyClasses
         public const string MESSAGE = "MESSAGE";
         public const string ERROR = "ERROR";
         private string logItemInfo;
-        private readonly string type;
         private string method;
-        private string body;
+
         public HttpRequest(string type = HttpRequest.MESSAGE)
         {
-            this.type = type;
+            this.Type = type;
         }
-        public Dictionary<string, string> getHeadersList { get; } = new Dictionary<string, string>();
+
+        public byte[] MessageBytes { get; set; }
+
+        private readonly Dictionary<string, string> getHeadersList = new Dictionary<string, string>();
+
+        public Dictionary<string, string> GetGetHeadersList()
+        {
+            return getHeadersList;
+        }
+
         public string Method
         {
-            get { return this.method; }
+            get => this.method;
             private set
             {
                 if (SetProperty<string>(ref method, value)) this.method = value;
             }
         }
-        public string Type
-        {
-            get { return this.type; }
-        }
+        public string Type { get; }
 
-        internal void ClearHeaders()
-        {
-            getHeadersList.Clear();
-        }
 
         public string Headers
         {
             get
             {
                 string sm = "";
-                foreach (KeyValuePair<string, string> entry in getHeadersList) sm += $"{entry.Key}:{entry.Value}\r\n";
+                foreach (KeyValuePair<string, string> entry in GetGetHeadersList()) sm += $"{entry.Key}:{entry.Value}\r\n";
                 return sm;
             }
         }
 
         internal void RemoveHeader(string v)
         {
-            getHeadersList.Remove(v);
+            GetGetHeadersList().Remove(v);
         }
 
-        public string Body
-        {
-            get { return this.body; }
-        }
+        public string Body { get; private set; }
         public string HttpString
         {
             get
@@ -68,19 +69,16 @@ namespace ProxyClasses
                 return $"{Method}\r\n{Headers}\r\n{Body}";
             }
         }
-        //TODO edit this function so the type is used to display different data
         public string LogItemInfo
         {
-            get => this.type.Equals(HttpRequest.MESSAGE) ? logItemInfo : $"{Method}\r\n{Headers}\r\n{Body}";
+            get => this.Type.Equals(HttpRequest.MESSAGE) ? logItemInfo : $"{Method}\r\n{Headers}\r\n{Body}";
             set
             {
                 SeperateProtocolElements(value);
                 if (SetProperty<string>(ref logItemInfo, value)) this.logItemInfo = value;
             }
         }
-
-
-        // Get the method/headers and body and save them seperately for later use
+        // Get the method/headers and body and save them seperately
         private void SeperateProtocolElements(string value)
         {
             bool reachedBody = false;
@@ -93,18 +91,19 @@ namespace ProxyClasses
                     if (result[i] == "") reachedBody = true;
                     else SaveHeader(result, i);
                 }
-                
-                else this.body += result[i];
+
+                else this.Body += result[i];
             }
         }
+
         public void UpdateHeader(string headerType, string header)
         {
-            if (getHeadersList.ContainsKey(headerType)) getHeadersList.Remove(headerType);
-            getHeadersList.Add(headerType, header);
+            if (GetGetHeadersList().ContainsKey(headerType)) GetGetHeadersList().Remove(headerType);
+            GetGetHeadersList().Add(headerType, header);
         }
         public string GetHeader(string headerType)
         {
-            if (getHeadersList.ContainsKey(headerType)) return getHeadersList[headerType];
+            if (GetGetHeadersList().ContainsKey(headerType)) return GetGetHeadersList()[headerType];
             return "";
         }
         private void SaveHeader(string[] result, int i)
@@ -116,6 +115,10 @@ namespace ProxyClasses
                 string header = result[i].Substring(index + 2); // + 2 to remove the : and space
                 UpdateHeader(headerType, header);
             }
+        }
+        internal void ClearHeaders()
+        {
+            GetGetHeadersList().Clear();
         }
     }
 }

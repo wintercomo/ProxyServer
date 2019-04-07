@@ -11,12 +11,12 @@ namespace ProxyClasses
     public class ProxyServer
 
     {
-        TcpListener serverListener;
-        ProxySettingsViewModel settings;
-        Cacher cacher;
+        readonly TcpListener serverListener;
+        readonly ProxySettingsViewModel settings;
+        readonly Cacher cacher;
         public ProxyServer(ProxySettingsViewModel proxySettings)
         {
-            serverListener = new TcpListener(IPAddress.Any, proxySettings.Port);
+            this.serverListener = new TcpListener(IPAddress.Any, proxySettings.Port);
             this.settings = proxySettings;
             this.cacher = new Cacher(settings);
         }
@@ -33,17 +33,10 @@ namespace ProxyClasses
 
         public async Task AcceptTcpClientAsync(Logger logger)
         {
-            try
+            using (TcpClient newClient = await serverListener.AcceptTcpClientAsync())
             {
-                TcpClient newClient = await serverListener.AcceptTcpClientAsync();
                 TcpConnection client = new TcpConnection(newClient, settings, cacher);
                 await client.HandleHttpRequestsAsync(logger);
-                client.CloseConnection();
-            }
-            catch (Exception)
-            {
-
-                throw;
             }
         }
     }

@@ -44,17 +44,21 @@ namespace ProxyClasses
                     }
                     cacher.RemoveItem(clientRequest.Method);
                 }
-                    // get response from proxy request and send to client
-                    var responseBytes = await streamReader.MakeProxyRequestAsync(clientRequest, settings.BufferSize);
-                    cacher.addRequest(clientRequest.Method, responseBytes);
-                    if (settings.ContentFilterOn) responseBytes = await streamReader.ReplaceImages(responseBytes);
-                    await streamReader.WriteMessageWithBufferAsync(clientStream, responseBytes, settings.BufferSize);
-
-                    string responseString = Encoding.ASCII.GetString(responseBytes, 0, responseBytes.Length);
-                    HttpRequest proxyResponse = new HttpRequest(HttpRequest.RESPONSE) { LogItemInfo = responseString };
-                    if (settings.AllowChangeHeaders) proxyResponse.RemoveHeader("Server");
-                    logger.Log(proxyResponse);
+                byte[] responseBytes = await streamReader.MakeProxyRequestAsync(clientRequest, settings.BufferSize);
+                await HandleProxyResponse(logger, clientStream, clientRequest, responseBytes);
             }
+        }
+
+        private async Task HandleProxyResponse(Logger logger, NetworkStream clientStream, HttpRequest clientRequest, byte[] responseBytes)
+        {
+            cacher.addRequest(clientRequest.Method, responseBytes);
+            if (settings.ContentFilterOn) responseBytes = await streamReader.ReplaceImages(responseBytes);
+            string responseString = Encoding.ASCII.GetString(responseBytes, 0, responseBytes.Length);
+            HttpRequest proxyResponse = new HttpRequest(HttpRequest.RESPONSE) { LogItemInfo = responseString, MessageBytes = responseBytes };
+
+            if (settings.AllowChangeHeaders) proxyResponse.RemoveHeader("Server");
+            await streamReader.WriteMessageWithBufferAsync(clientStream, proxyResponse.MessageBytes, settings.BufferSize);
+            logger.Log(proxyResponse);
         }
 
         private async Task HandleCachedResponse(Logger logger, int bufferSize, NetworkStream clientStream, HttpRequest clientRequest, CacheItem knownResponse)
@@ -62,9 +66,9 @@ namespace ProxyClasses
             byte[] knownResponseBytes = knownResponse.ResponseBytes;
             if (settings.ContentFilterOn) knownResponseBytes = await streamReader.ReplaceImages(knownResponseBytes);
             HttpRequest cachedResponse = new HttpRequest(HttpRequest.CACHED_RESPONSE) { LogItemInfo = ASCIIEncoding.ASCII.GetString(knownResponseBytes) };
+            if (settings.AllowChangeHeaders) cachedResponse.RemoveHeader("Server");
 
             knownResponseBytes = await CheckForModifiedContent(logger, bufferSize, clientRequest, knownResponseBytes, knownResponseBytes, cachedResponse);
-            if (settings.AllowChangeHeaders) cachedResponse.RemoveHeader("Server");
             if (settings.ContentFilterOn) knownResponseBytes = await streamReader.ReplaceImages(knownResponseBytes);
             await streamReader.WriteMessageWithBufferAsync(clientStream, knownResponseBytes, bufferSize);
             logger.Log(cachedResponse);
@@ -81,26 +85,13 @@ namespace ProxyClasses
                 {
                     logger.Log(new HttpRequest() { LogItemInfo = "Content not modified" });
                     return responseToSend;
-                    //return;
                 }
                 responseToSend = tmpBytes;
-                if (settings.AllowChangeHeaders) cachedResponse.RemoveHeader("Server");
-                //await streamReader.WriteMessageWithBufferAsync(clientStream, tmpBytes, bufferSize);
                 cacher.RemoveItem(clientRequest.Method);
-
                 return responseToSend;
             }
-            else
-            {
-                responseToSend = knownResponseBytes;
-            }
-
+            else responseToSend = knownResponseBytes;
             return responseToSend;
-        }
-
-        internal void CloseConnection()
-        {
-            client.Dispose();
         }
     }
 }

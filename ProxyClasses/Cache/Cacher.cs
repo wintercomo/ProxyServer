@@ -7,8 +7,8 @@ namespace ProxyClasses
 {
     public class Cacher
     {
-        Dictionary<string, CacheItem> knowRequests = new Dictionary<string, CacheItem>();
-        ProxySettingsViewModel settings;
+        readonly Dictionary<string, CacheItem> knowRequests = new Dictionary<string, CacheItem>();
+        readonly ProxySettingsViewModel settings;
         public Cacher(ProxySettingsViewModel settings)
         {
             this.settings = settings;
