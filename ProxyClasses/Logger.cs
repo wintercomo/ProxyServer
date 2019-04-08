@@ -10,28 +10,35 @@ namespace ProxyClasses
     {
         readonly ObservableCollection<HttpRequest> logItems;
         readonly ProxySettingsViewModel settings;
-        public Logger(ObservableCollection<HttpRequest> logItems, ProxySettingsViewModel settings)
+        object _itemsLock;
+        public Logger(ObservableCollection<HttpRequest> logItems, ProxySettingsViewModel settings, object _itemsLock)
         {
             this.logItems = logItems;
             this.settings = settings;
+            this._itemsLock = _itemsLock;
         }
+
+        public object BindingOperations { get; }
 
         public void Log(HttpRequest logItem)
         {
-            if ((!settings.LogContentIn && logItem.Type.Equals(HttpRequest.REQUEST))
-                || (!settings.LogContentOut && logItem.Type.Equals(HttpRequest.RESPONSE))) return; // do nothing in this situation
-            else
+            lock (_itemsLock)
             {
-                if (!settings.LogCLientInfo) logItem.UpdateHeader("User-Agent", "");
-                if (!settings.LogRequestHeaders)
+                if ((!settings.LogContentIn && logItem.Type.Equals(HttpRequest.REQUEST))
+                    || (!settings.LogContentOut && logItem.Type.Equals(HttpRequest.RESPONSE))) return; // do nothing in this situation
+                else
                 {
-                    //Make a copy of item so request wont fail
-                    HttpRequest logItemWithoutHeaders = new HttpRequest(logItem.Type) { LogItemInfo = logItem.LogItemInfo };
-                    logItemWithoutHeaders.ClearHeaders();
-                    logItems.Add(logItemWithoutHeaders);
-                    return;
+                    if (!settings.LogCLientInfo) logItem.UpdateHeader("User-Agent", "");
+                    if (!settings.LogRequestHeaders)
+                    {
+                        //Make a copy of item so request wont fail
+                        HttpRequest logItemWithoutHeaders = new HttpRequest(logItem.Type) { LogItemInfo = logItem.LogItemInfo };
+                        logItemWithoutHeaders.ClearHeaders();
+                        logItems.Add(logItemWithoutHeaders);
+                        return;
+                    }
+                    logItems.Add(logItem);
                 }
-                logItems.Add(logItem);
             }
         }
     }

@@ -5,6 +5,7 @@ using System.IO;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Data;
 
 namespace ProxyServer
 {
@@ -21,8 +22,12 @@ namespace ProxyServer
         {
             InitializeComponent();
             settings = new ProxySettingsViewModel();
-            logger = new Logger(LogItems, settings);
+            object _itemsLock = new object();
+            BindingOperations.EnableCollectionSynchronization(LogItems, _itemsLock);
+            logger = new Logger(LogItems, settings, _itemsLock);
             proxyServer = new ProxyClasses.ProxyServer(settings);
+
+            
             // set the binding
             settingsBlock.DataContext = settings;
             logListBox.ItemsSource = LogItems;
@@ -59,7 +64,8 @@ namespace ProxyServer
         {
             try
             {
-                await proxyServer.AcceptTcpClientAsync(logger);
+                await Task.Run(() => proxyServer.AcceptTcpClientAsync(logger));
+                //await proxyServer.AcceptTcpClientAsync(logger);
             }
             catch (UriFormatException)
             {
@@ -75,6 +81,8 @@ namespace ProxyServer
             catch (IOException err)
             {
                 logger.Log(new HttpRequest(HttpRequest.ERROR) { LogItemInfo = "Stream closed: \r\n " + err.Message });
+            }catch (InvalidOperationException err)
+            {
             }
         }
 

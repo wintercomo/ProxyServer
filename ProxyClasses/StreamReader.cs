@@ -47,10 +47,8 @@ namespace ProxyClasses
                     await WriteMessageWithBufferAsync(proxyStream, requestInBytes, bufferSize);
                     using (MemoryStream ms = new MemoryStream())
                     {
-                        byte[] responseBytes = await GetBytesFromReading(bufferSize, proxyStream);
-                        return responseBytes;
-                        //await proxyStream.CopyToAsync(ms);
-                        //return ms.ToArray(); ;
+                        await proxyStream.CopyToAsync(ms);
+                        return ms.ToArray(); ;
                     }
                 }
             }
