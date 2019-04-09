@@ -14,24 +14,6 @@ namespace ProxyClasses
         {
             placeholderBytes = File.ReadAllBytes(@"Assets\Placeholder.png");
         }
-        private int BinaryMatch(byte[] input, byte[] pattern)
-        {
-            int sLen = input.Length - pattern.Length + 1;
-            for (int i = 0; i < sLen; ++i)
-            {
-                bool match = true;
-                for (int j = 0; j < pattern.Length; ++j)
-                {
-                    if (input[i + j] != pattern[j])
-                    {
-                        match = false;
-                        break;
-                    }
-                }
-                if (match) return i;
-            }
-            return -1;
-        }
         public async Task<byte[]> MakeProxyRequestAsync(HttpRequest httpRequest, int bufferSize)
         {
             string httpRequestString = httpRequest.HttpString;
@@ -42,7 +24,6 @@ namespace ProxyClasses
                 await proxyTcpClient.ConnectAsync(baseUri.Host, baseUri.Port);
                 using (NetworkStream proxyStream = proxyTcpClient.GetStream())
                 {
-
                     byte[] requestInBytes = Encoding.ASCII.GetBytes(httpRequestString);
                     await WriteMessageWithBufferAsync(proxyStream, requestInBytes, bufferSize);
                     using (MemoryStream ms = new MemoryStream())
@@ -66,11 +47,9 @@ namespace ProxyClasses
         }
         public async Task<byte[]> ReplaceImages(byte[] message)
         {
-
             using (MemoryStream memory = new MemoryStream())
             {
                 await memory.WriteAsync(message, 0, message.Length);
-                memory.Position = 0;
                 var index = BinaryMatch(message, Encoding.ASCII.GetBytes("\r\n\r\n")) + 4;
                 var headers = Encoding.ASCII.GetString(message, 0, index);
                 memory.Position = index;
@@ -82,7 +61,6 @@ namespace ProxyClasses
         public async Task<byte[]> GetBytesFromReading(int bufferSize, NetworkStream stream)
         {
             byte[] buffer = new byte[bufferSize];
-            //use memory stream to save all bytes
             using (MemoryStream memory = new MemoryStream())
             {
                 do
@@ -92,6 +70,24 @@ namespace ProxyClasses
                 } while (stream.DataAvailable);
                 return memory.ToArray();
             }
+        }
+        private int BinaryMatch(byte[] input, byte[] pattern)
+        {
+            int sLen = input.Length - pattern.Length + 1;
+            for (int i = 0; i < sLen; ++i)
+            {
+                bool match = true;
+                for (int j = 0; j < pattern.Length; ++j)
+                {
+                    if (input[i + j] != pattern[j])
+                    {
+                        match = false;
+                        break;
+                    }
+                }
+                if (match) return i;
+            }
+            return -1;
         }
     }
 }

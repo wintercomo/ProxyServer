@@ -22,13 +22,13 @@ namespace ProxyServer
         {
             InitializeComponent();
             settings = new ProxySettingsViewModel();
+            // allow updates from different threads
             object _itemsLock = new object();
             BindingOperations.EnableCollectionSynchronization(LogItems, _itemsLock);
+
+            // set the binding
             logger = new Logger(LogItems, settings, _itemsLock);
             proxyServer = new ProxyClasses.ProxyServer(settings);
-
-            
-            // set the binding
             settingsBlock.DataContext = settings;
             logListBox.ItemsSource = LogItems;
             //welcome message
@@ -54,10 +54,7 @@ namespace ProxyServer
             logger.Log(new HttpRequest() { LogItemInfo = "Listening for http request on TCP level" });
             settings.ServerRunning = true;
             btnStartStopProxy.Content = "STOP";
-            while (true)
-            {
-                await TryAcceptingClients();
-            }
+            while (true) await TryAcceptingClients();
         }
 
         private async Task TryAcceptingClients()
@@ -65,7 +62,6 @@ namespace ProxyServer
             try
             {
                 await Task.Run(() => proxyServer.AcceptTcpClientAsync(logger));
-                //await proxyServer.AcceptTcpClientAsync(logger);
             }
             catch (UriFormatException)
             {

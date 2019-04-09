@@ -52,7 +52,6 @@ namespace ProxyClasses
 
                 string responseString = Encoding.ASCII.GetString(responseBytes, 0, responseBytes.Length);
                 HttpRequest proxyResponse = new HttpRequest(HttpRequest.RESPONSE) { LogItemInfo = responseString };
-                if (settings.AllowChangeHeaders) proxyResponse.RemoveHeader("Server");
                 logger.Log(proxyResponse);
             }
         }

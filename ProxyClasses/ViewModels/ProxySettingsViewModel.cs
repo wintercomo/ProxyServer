@@ -12,7 +12,7 @@ namespace ProxyServer
     {
         private Int32 port = 8090;
         private Int32 cacheTimeout = 60000;
-        private Int32 bufferSize = 200;
+        private Int32 bufferSize = 1024;
         private Boolean checkModifiedContent = false;
         private Boolean contentFilterOn = false;
         private Boolean basicAuthOn = false;
